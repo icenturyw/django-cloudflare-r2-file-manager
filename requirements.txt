@@ -1,0 +1,10 @@
+Django
+django-storages
+boto3
+python-dotenv
+Pillow
+django-crispy-forms
+crispy-bootstrap5
+django-environ
+gunicorn
+whitenoise 

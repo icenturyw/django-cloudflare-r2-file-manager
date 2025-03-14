@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}文件列表 - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-file-alt"></i> 文件列表</h1>
+            {% if user.is_authenticated %}
+            <a href="{% url 'file_manager:file_upload' %}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> 上传文件
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 搜索表单 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-search"></i> 搜索文件</h5>
+            </div>
+            <div class="card-body">
+                {% crispy search_form %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件列表 -->
+<div class="row">
+    {% if files %}
+        {% for file in files %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 file-card">
+                <div class="card-body text-center">
+                    <div class="file-icon">
+                        {% if file.file_type == 'pdf' %}
+                            <i class="fas fa-file-pdf text-danger"></i>
+                        {% elif file.file_type == 'doc' or file.file_type == 'docx' %}
+                            <i class="fas fa-file-word text-primary"></i>
+                        {% elif file.file_type == 'xls' or file.file_type == 'xlsx' %}
+                            <i class="fas fa-file-excel text-success"></i>
+                        {% elif file.file_type == 'ppt' or file.file_type == 'pptx' %}
+                            <i class="fas fa-file-powerpoint text-warning"></i>
+                        {% elif file.file_type == 'jpg' or file.file_type == 'jpeg' or file.file_type == 'png' or file.file_type == 'gif' %}
+                            <i class="fas fa-file-image text-info"></i>
+                        {% elif file.file_type == 'zip' or file.file_type == 'rar' %}
+                            <i class="fas fa-file-archive text-secondary"></i>
+                        {% elif file.file_type == 'txt' %}
+                            <i class="fas fa-file-alt text-secondary"></i>
+                        {% else %}
+                            <i class="fas fa-file text-secondary"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title">{{ file.title }}</h5>
+                    <p class="card-text text-muted">
+                        {% if file.category %}
+                        <span class="badge bg-info">{{ file.category.name }}</span>
+                        {% endif %}
+                        <span class="badge bg-secondary">{{ file.file_type|upper }}</span>
+                        {% if file.is_public %}
+                        <span class="badge bg-success">公开</span>
+                        {% else %}
+                        <span class="badge bg-warning">私有</span>
+                        {% endif %}
+                    </p>
+                    <p class="card-text small">
+                        上传者: {{ file.uploaded_by.username }}<br>
+                        上传时间: {{ file.upload_date|date:"Y-m-d H:i" }}<br>
+                        下载次数: {{ file.download_count }}
+                    </p>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100">
+                        <a href="{% url 'file_manager:file_detail' file.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-info-circle"></i> 详情
+                        </a>
+                        <a href="{% url 'file_manager:file_preview' file.pk %}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-eye"></i> 预览
+                        </a>
+                        <form method="post" action="{% url 'file_manager:file_download' file.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-download"></i> 下载
+                            </button>
+                        </form>
+                        {% if user.is_authenticated and user == file.uploaded_by or user.is_staff %}
+                        <a href="{% url 'file_manager:file_update' file.pk %}" class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-edit"></i> 编辑
+                        </a>
+                        <a href="{% url 'file_manager:file_delete' file.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i> 删除
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 暂无文件。
+                {% if user.is_authenticated %}
+                <a href="{% url 'file_manager:file_upload' %}" class="alert-link">上传一个文件</a>
+                {% else %}
+                请<a href="{% url 'admin:login' %}" class="alert-link">登录</a>后上传文件。
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 分页 -->
+{% if is_paginated %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.query %}&query={{ request.GET.query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}编辑文件 - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-edit"></i> 编辑文件</h1>
+            <a href="{% url 'file_manager:file_detail' file.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回文件详情
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> 编辑文件: {{ file.title }}</h5>
+            </div>
+            <div class="card-body">
+                {% crispy form %}
+            </div>
+            <div class="card-footer bg-light">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle"></i> 提示：
+                    <ul class="mb-0">
+                        <li>文件标题应简洁明了，便于识别</li>
+                        <li>如果您更改了文件，原文件将被替换</li>
+                        <li>如果选择"公开"，所有人都可以查看和下载此文件</li>
+                        <li>如果不选择"公开"，只有您和管理员可以查看和下载此文件</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 文件上传进度显示
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        const form = document.querySelector('form');
+        
+        if (fileInput && form) {
+            fileInput.addEventListener('change', function() {
+                const fileName = this.files[0]?.name || '未选择文件';
+                const fileLabel = this.nextElementSibling;
+                if (fileLabel) {
+                    fileLabel.textContent = fileName;
+                }
+            });
+            
+            form.addEventListener('submit', function() {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn && fileInput.files.length > 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 上传中...';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

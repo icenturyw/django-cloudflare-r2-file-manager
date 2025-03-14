@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-folder-open"></i> {{ category.name }}</h1>
+            <div>
+                <a href="{% url 'file_manager:category_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回分类列表
+                </a>
+                {% if user.is_staff %}
+                <a href="{% url 'file_manager:category_update' category.pk %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> 编辑分类
+                </a>
+                <a href="{% url 'file_manager:category_delete' category.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> 删除分类
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if category.description %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> 分类描述</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ category.description }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt"></i> 分类文件</h5>
+            </div>
+            <div class="card-body">
+                {% if files %}
+                <div class="row">
+                    {% for file in files %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 file-card">
+                            <div class="card-body text-center">
+                                <div class="file-icon">
+                                    {% if file.file_type == 'pdf' %}
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                    {% elif file.file_type == 'doc' or file.file_type == 'docx' %}
+                                        <i class="fas fa-file-word text-primary"></i>
+                                    {% elif file.file_type == 'xls' or file.file_type == 'xlsx' %}
+                                        <i class="fas fa-file-excel text-success"></i>
+                                    {% elif file.file_type == 'ppt' or file.file_type == 'pptx' %}
+                                        <i class="fas fa-file-powerpoint text-warning"></i>
+                                    {% elif file.file_type == 'jpg' or file.file_type == 'jpeg' or file.file_type == 'png' or file.file_type == 'gif' %}
+                                        <i class="fas fa-file-image text-info"></i>
+                                    {% elif file.file_type == 'zip' or file.file_type == 'rar' %}
+                                        <i class="fas fa-file-archive text-secondary"></i>
+                                    {% elif file.file_type == 'txt' %}
+                                        <i class="fas fa-file-alt text-secondary"></i>
+                                    {% else %}
+                                        <i class="fas fa-file text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="card-title">{{ file.title }}</h5>
+                                <p class="card-text text-muted">
+                                    <span class="badge bg-secondary">{{ file.file_type|upper }}</span>
+                                    {% if file.is_public %}
+                                    <span class="badge bg-success">公开</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">私有</span>
+                                    {% endif %}
+                                </p>
+                                <p class="card-text small">
+                                    上传者: {{ file.uploaded_by.username }}<br>
+                                    上传时间: {{ file.upload_date|date:"Y-m-d H:i" }}<br>
+                                    下载次数: {{ file.download_count }}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <div class="btn-group w-100">
+                                    <a href="{% url 'file_manager:file_detail' file.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-info-circle"></i> 详情
+                                    </a>
+                                    <a href="{% url 'file_manager:file_preview' file.pk %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i> 预览
+                                    </a>
+                                    <form method="post" action="{% url 'file_manager:file_download' file.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-download"></i> 下载
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 此分类下暂无文件。
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'file_manager:file_upload' %}" class="alert-link">上传一个文件</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

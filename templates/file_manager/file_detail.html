@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ file.title }} - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-file-alt"></i> 文件详情</h1>
+            <a href="{% url 'file_manager:file_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回文件列表
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> 基本信息</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">{{ file.title }}</h2>
+                {% if file.description %}
+                <div class="card-text mb-3">
+                    <h6 class="text-muted">描述：</h6>
+                    <p>{{ file.description }}</p>
+                </div>
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                文件类型
+                                <span class="badge bg-secondary">{{ file.file_type|upper }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                文件大小
+                                <span>
+                                    {% if file.file_size < 1024 %}
+                                        {{ file.file_size }} B
+                                    {% elif file.file_size < 1048576 %}
+                                        {{ file.file_size|divisibleby:"1024"|floatformat:2 }} KB
+                                    {% elif file.file_size < 1073741824 %}
+                                        {{ file.file_size|divisibleby:"1048576"|floatformat:2 }} MB
+                                    {% else %}
+                                        {{ file.file_size|divisibleby:"1073741824"|floatformat:2 }} GB
+                                    {% endif %}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                分类
+                                {% if file.category %}
+                                <a href="{% url 'file_manager:category_detail' file.category.pk %}" class="badge bg-info text-decoration-none">
+                                    {{ file.category.name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">未分类</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                上传者
+                                <span>{{ file.uploaded_by.username }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                上传时间
+                                <span>{{ file.upload_date|date:"Y-m-d H:i" }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                访问权限
+                                {% if file.is_public %}
+                                <span class="badge bg-success">公开</span>
+                                {% else %}
+                                <span class="badge bg-warning">私有</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                下载次数
+                                <span class="badge bg-secondary">{{ file.download_count }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group">
+                    <a href="{% url 'file_manager:file_preview' file.pk %}" class="btn btn-info">
+                        <i class="fas fa-eye"></i> 预览
+                    </a>
+                    <form method="post" action="{% url 'file_manager:file_download' file.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                    </form>
+                    {% if user.is_authenticated and user == file.uploaded_by or user.is_staff %}
+                    <a href="{% url 'file_manager:file_update' file.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> 编辑
+                    </a>
+                    <a href="{% url 'file_manager:file_delete' file.pk %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> 删除
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-file"></i> 文件预览</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if file.file_type == 'jpg' or file.file_type == 'jpeg' or file.file_type == 'png' or file.file_type == 'gif' %}
+                    <img src="{% url 'file_manager:serve_file' file.pk %}" alt="{{ file.title }}" class="img-fluid mb-3" style="max-height: 300px;">
+                    <a href="{% url 'file_manager:file_preview' file.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-search-plus"></i> 查看大图
+                    </a>
+                {% elif file.file_type == 'pdf' %}
+                    <div class="file-icon mb-3">
+                        <i class="fas fa-file-pdf text-danger" style="font-size: 5rem;"></i>
+                    </div>
+                    <a href="{% url 'file_manager:file_preview' file.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye"></i> 在线预览PDF
+                    </a>
+                {% else %}
+                    <div class="file-icon mb-3">
+                        {% if file.file_type == 'doc' or file.file_type == 'docx' %}
+                            <i class="fas fa-file-word text-primary" style="font-size: 5rem;"></i>
+                        {% elif file.file_type == 'xls' or file.file_type == 'xlsx' %}
+                            <i class="fas fa-file-excel text-success" style="font-size: 5rem;"></i>
+                        {% elif file.file_type == 'ppt' or file.file_type == 'pptx' %}
+                            <i class="fas fa-file-powerpoint text-warning" style="font-size: 5rem;"></i>
+                        {% elif file.file_type == 'zip' or file.file_type == 'rar' %}
+                            <i class="fas fa-file-archive text-secondary" style="font-size: 5rem;"></i>
+                        {% elif file.file_type == 'txt' %}
+                            <i class="fas fa-file-alt text-secondary" style="font-size: 5rem;"></i>
+                        {% else %}
+                            <i class="fas fa-file text-secondary" style="font-size: 5rem;"></i>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted">此文件类型不支持在线预览</p>
+                    <form method="post" action="{% url 'file_manager:file_download' file.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-success">
+                            <i class="fas fa-download"></i> 下载文件
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if file.category %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-folder"></i> 分类信息</h5>
+            </div>
+            <div class="card-body">
+                <h5>{{ file.category.name }}</h5>
+                {% if file.category.description %}
+                <p class="text-muted">{{ file.category.description }}</p>
+                {% endif %}
+                <a href="{% url 'file_manager:category_detail' file.category.pk %}" class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-folder-open"></i> 查看此分类的所有文件
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

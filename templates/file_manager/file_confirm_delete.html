@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}删除文件 - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-trash"></i> 删除文件</h1>
+            <a href="{% url 'file_manager:file_detail' file.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回文件详情
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> 确认删除</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i> 警告：此操作不可逆！
+                </div>
+                <p class="lead">您确定要删除以下文件吗？</p>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                {% if file.file_type == 'pdf' %}
+                                    <i class="fas fa-file-pdf text-danger fa-3x"></i>
+                                {% elif file.file_type == 'doc' or file.file_type == 'docx' %}
+                                    <i class="fas fa-file-word text-primary fa-3x"></i>
+                                {% elif file.file_type == 'xls' or file.file_type == 'xlsx' %}
+                                    <i class="fas fa-file-excel text-success fa-3x"></i>
+                                {% elif file.file_type == 'ppt' or file.file_type == 'pptx' %}
+                                    <i class="fas fa-file-powerpoint text-warning fa-3x"></i>
+                                {% elif file.file_type == 'jpg' or file.file_type == 'jpeg' or file.file_type == 'png' or file.file_type == 'gif' %}
+                                    <i class="fas fa-file-image text-info fa-3x"></i>
+                                {% elif file.file_type == 'zip' or file.file_type == 'rar' %}
+                                    <i class="fas fa-file-archive text-secondary fa-3x"></i>
+                                {% elif file.file_type == 'txt' %}
+                                    <i class="fas fa-file-alt text-secondary fa-3x"></i>
+                                {% else %}
+                                    <i class="fas fa-file text-secondary fa-3x"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h4 class="mb-1">{{ file.title }}</h4>
+                                <p class="mb-0 text-muted">
+                                    类型: {{ file.file_type|upper }} | 
+                                    大小: 
+                                    {% if file.file_size < 1024 %}
+                                        {{ file.file_size }} B
+                                    {% elif file.file_size < 1048576 %}
+                                        {{ file.file_size|divisibleby:"1024"|floatformat:2 }} KB
+                                    {% elif file.file_size < 1073741824 %}
+                                        {{ file.file_size|divisibleby:"1048576"|floatformat:2 }} MB
+                                    {% else %}
+                                        {{ file.file_size|divisibleby:"1073741824"|floatformat:2 }} GB
+                                    {% endif %}
+                                    | 上传者: {{ file.uploaded_by.username }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'file_manager:file_detail' file.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}删除分类 - Cloudflare R2 文件管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-trash"></i> 删除分类</h1>
+            <a href="{% url 'file_manager:category_detail' category.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回分类详情
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> 确认删除</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i> 警告：此操作不可逆！
+                </div>
+                <p class="lead">您确定要删除以下分类吗？</p>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-folder text-warning fa-3x"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1">{{ category.name }}</h4>
+                                {% if category.description %}
+                                <p class="mb-0 text-muted">{{ category.description|truncatechars:100 }}</p>
+                                {% endif %}
+                                <p class="mb-0 text-muted">
+                                    创建时间: {{ category.created_at|date:"Y-m-d H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if category.files.count > 0 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 此分类下有 {{ category.files.count }} 个文件。删除此分类后，这些文件将不再属于任何分类。
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'file_manager:category_detail' category.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
