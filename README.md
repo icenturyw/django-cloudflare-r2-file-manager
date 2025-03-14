@@ -8,7 +8,7 @@
 - 文件浏览：查看已上传的所有文件
 - 文件下载：下载已上传的文件
 - 文件管理：删除不需要的文件
-- 文件预览：支持图片、文本等文件的在线预览
+- 文件预览：支持图片、PDF等文件的在线预览
 - 用户认证：基本的用户登录和权限管理
 
 ## 功能展示
@@ -146,3 +146,41 @@ MIT
 ## 联系方式
 
 如有任何问题，请联系项目维护者。 
+
+## 最近更新
+
+### 2025-03-14
+- 修复了模板语法错误：
+  - 问题：在模板中使用 `startswith` 方法导致 `TemplateSyntaxError: Unused 'image/' at end of if expression` 错误
+  - 解决方案：使用 Django 模板过滤器 `slice` 替代 Python 的 `startswith` 方法，例如 `content_type|slice:":6" == 'image/'`
+- 修复了文件预览功能在使用Cloudflare R2存储时的错误：
+  - 问题：当使用R2存储时，`file.file.path`方法不可用，导致`NotImplementedError: This backend doesn't support absolute paths.`错误
+  - 解决方案：修改了`file_preview`和`serve_file`视图，使用文件URL而不是本地路径
+  - 更新了模板以直接使用文件URL进行预览和下载
+- 修复了Django DeleteView警告：将FileDeleteView和CategoryDeleteView中的自定义删除逻辑从delete()方法移至form_valid()方法，符合Django最佳实践。
+- 原因：Django的DeleteView使用FormMixin处理POST请求，因此任何自定义删除逻辑应该放在form_valid()方法中，而不是delete()方法中。
+
+### 2025-03-14
+- 修复了文件删除功能的问题：
+  - 问题：删除文件时只从数据库中删除了记录，但没有从Cloudflare R2存储桶中删除实际文件
+  - 解决方案：
+    - 修改了`FileDeleteView`类的`form_valid`方法，添加了从R2存储桶删除文件的逻辑
+    - 修改了`CategoryDeleteView`类的`form_valid`方法，确保在删除分类时也删除关联的文件
+    - 修改了`FileUpdateView`类的`form_valid`方法，确保在更新文件时，如果上传了新文件，旧文件会被删除
+  - 实现方式：使用Django Storage API的`delete`方法删除存储中的文件
+
+## 注意事项
+
+### 使用Cloudflare R2存储的限制
+
+当使用Cloudflare R2作为存储后端时，有一些需要注意的限制：
+
+1. **无法使用本地文件路径**：R2存储不支持`path()`方法，因此不能使用`file.file.path`获取文件的本地路径
+2. **文本文件预览限制**：由于无法直接读取R2存储中的文本内容，文本文件预览功能有限制
+3. **文件操作**：所有文件操作都需要通过URL进行，而不是本地文件系统操作
+
+### 最佳实践
+
+1. 始终使用`file.file.url`获取文件URL，而不是`file.file.path`
+2. 对于需要读取文件内容的操作，考虑使用临时下载或流式处理
+3. 确保正确配置R2存储的访问权限和URL过期时间 

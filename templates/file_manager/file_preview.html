@@ -65,13 +65,13 @@
             <div class="card-body">
                 {% if can_preview %}
                     <div class="preview-container">
-                        {% if content_type and content_type.startswith 'image/' %}
-                            <img src="{% url 'file_manager:serve_file' file.pk %}" alt="{{ file.title }}" class="preview-image">
+                        {% if content_type and content_type|slice:":6" == 'image/' %}
+                            <img src="{{ file_url }}" alt="{{ file.title }}" class="preview-image">
                         {% elif content_type == 'application/pdf' %}
-                            <iframe src="{% url 'file_manager:serve_file' file.pk %}" class="preview-pdf"></iframe>
-                        {% elif content_type and content_type.startswith 'text/' %}
+                            <iframe src="{{ file_url }}" class="preview-pdf"></iframe>
+                        {% elif content_type and content_type|slice:":5" == 'text/' %}
                             <div class="preview-text">
-                                <pre>{{ file.file.read|default:"无法读取文件内容" }}</pre>
+                                <pre>无法直接读取云存储中的文本内容，请下载后查看。</pre>
                             </div>
                         {% else %}
                             <div class="alert alert-warning">
@@ -125,12 +125,9 @@
                 </div>
             </div>
             <div class="card-footer">
-                <form method="post" action="{% url 'file_manager:file_download' file.pk %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-download"></i> 下载文件
-                    </button>
-                </form>
+                <a href="{{ file_url }}" class="btn btn-success" download>
+                    <i class="fas fa-download"></i> 下载文件
+                </a>
                 {% if user.is_authenticated and user == file.uploaded_by or user.is_staff %}
                 <a href="{% url 'file_manager:file_update' file.pk %}" class="btn btn-warning">
                     <i class="fas fa-edit"></i> 编辑

@@ -110,6 +110,17 @@ class FileUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == file.uploaded_by or self.request.user.is_staff
     
     def form_valid(self, form):
+        # 获取当前文件对象
+        file_obj = self.get_object()
+        
+        # 检查是否上传了新文件
+        if 'file' in form.changed_data:
+            # 删除旧文件
+            try:
+                file_obj.file.delete(save=False)
+            except Exception as e:
+                messages.warning(self.request, f'删除旧文件时出错: {str(e)}')
+        
         messages.success(self.request, '文件更新成功！')
         return super().form_valid(form)
 
@@ -123,9 +134,18 @@ class FileDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         file = self.get_object()
         return self.request.user == file.uploaded_by or self.request.user.is_staff
     
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, '文件已删除！')
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        file_obj = self.get_object()
+        
+        # 从存储中删除文件
+        try:
+            # 获取存储的文件
+            file_obj.file.delete(save=False)
+        except Exception as e:
+            messages.error(self.request, f'删除文件时出错: {str(e)}')
+        
+        messages.success(self.request, '文件已删除！')
+        return super().form_valid(form)
 
 class CategoryListView(ListView):
     """分类列表视图"""
@@ -185,9 +205,22 @@ class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_staff
     
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, '分类已删除！')
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        category = self.get_object()
+        
+        # 获取该分类下的所有文件
+        files = category.files.all()
+        
+        # 删除每个文件的存储
+        for file_obj in files:
+            try:
+                # 从存储中删除文件
+                file_obj.file.delete(save=False)
+            except Exception as e:
+                messages.error(self.request, f'删除文件时出错: {str(e)}')
+        
+        messages.success(self.request, '分类已删除！')
+        return super().form_valid(form)
 
 @login_required
 @require_POST
@@ -237,24 +270,23 @@ def file_preview(request, pk):
     if not file.is_public and request.user != file.uploaded_by and not request.user.is_staff:
         raise Http404("您没有权限预览此文件")
     
-    # 获取文件路径
-    file_path = file.file.path
-    
-    # 检查文件是否存在
-    if not os.path.exists(file_path):
-        raise Http404("文件不存在")
-    
     # 获取文件类型
-    content_type, encoding = mimetypes.guess_type(file_path)
+    content_type, encoding = mimetypes.guess_type(file.file.name)
     
-    # 如果是图片、PDF或文本文件，则可以直接预览
-    previewable_types = ['image/', 'application/pdf', 'text/']
-    can_preview = any(content_type and content_type.startswith(t) for t in previewable_types)
+    # 判断是否可以预览
+    can_preview = False
+    if content_type:
+        if content_type.startswith('image/') or content_type == 'application/pdf' or content_type.startswith('text/'):
+            can_preview = True
+    
+    # 获取文件URL
+    file_url = file.file.url
     
     context = {
         'file': file,
         'can_preview': can_preview,
-        'content_type': content_type
+        'content_type': content_type,
+        'file_url': file_url
     }
     
     return render(request, 'file_manager/file_preview.html', context)
@@ -270,22 +302,5 @@ def serve_file(request, pk):
     if not file.is_public and request.user != file.uploaded_by and not request.user.is_staff:
         raise Http404("您没有权限访问此文件")
     
-    # 获取文件路径
-    file_path = file.file.path
-    
-    # 检查文件是否存在
-    if not os.path.exists(file_path):
-        raise Http404("文件不存在")
-    
-    # 获取文件类型
-    content_type, encoding = mimetypes.guess_type(file_path)
-    if content_type is None:
-        content_type = 'application/octet-stream'
-    
-    # 创建响应
-    response = FileResponse(
-        FileWrapper(open(file_path, 'rb')),
-        content_type=content_type
-    )
-    
-    return response
+    # 对于云存储，重定向到文件URL
+    return redirect(file.file.url)
