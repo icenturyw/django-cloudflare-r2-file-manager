@@ -12,9 +12,9 @@
 - 用户认证：基本的用户登录和权限管理
 
 ## 功能展示
-<img src="https://alist.icenturyw.com/d/website_ali/img/20250314163622.png" alt="功能">
-<img src="https://alist.icenturyw.com/d/website_ali/img/20250314164006.png" alt="功能">
-<img src="https://alist.icenturyw.com/d/website_ali/img/20250314163946.png" alt="功能">
+<img src="https://alist.icenturyw.com/d/website/20250314163622.png" alt="功能">
+<img src="https://alist.icenturyw.com/d/website/20250314164006.png" alt="功能">
+<img src="https://alist.icenturyw.com/d/website/20250314163946.png" alt="功能">
 
 
 ## 技术栈
