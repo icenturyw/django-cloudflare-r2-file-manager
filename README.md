@@ -11,6 +11,12 @@
 - 文件预览：支持图片、文本等文件的在线预览
 - 用户认证：基本的用户登录和权限管理
 
+## 功能展示
+<img src="https://alist.icenturyw.com/d/website_ali/img/20250314163622.png" alt="功能">
+<img src="https://alist.icenturyw.com/d/website_ali/img/20250314164006.png" alt="功能">
+<img src="https://alist.icenturyw.com/d/website_ali/img/20250314163946.png" alt="功能">
+
+
 ## 技术栈
 
 - Django: Web框架
